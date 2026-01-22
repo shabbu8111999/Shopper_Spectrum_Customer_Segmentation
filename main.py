@@ -9,6 +9,35 @@ from src.clustering import load_kmeans_model, load_scaler
 
 
 # =================================================
+# Helper: derive labels from KMeans centroids
+# =================================================
+
+def get_cluster_labels(kmeans_model, scaler):
+    """
+    Derive human-readable segment labels from KMeans centroids
+    using RFM business rules.
+    """
+    centers = scaler.inverse_transform(kmeans_model.cluster_centers_)
+    centers_df = pd.DataFrame(
+        centers, columns=["Recency", "Frequency", "Monetary"]
+    )
+
+    labels = {}
+
+    for i, row in centers_df.iterrows():
+        if row["Recency"] <= 60 and row["Frequency"] >= 8:
+            labels[i] = "High Value Customer"
+        elif row["Recency"] >= 180 and row["Frequency"] <= 2:
+            labels[i] = "High Risk Customer"
+        elif row["Frequency"] >= 5:
+            labels[i] = "Regular Customer"
+        else:
+            labels[i] = "Occasional Shopper"
+
+    return labels
+
+
+# =================================================
 # Page Configuration
 # =================================================
 
@@ -33,11 +62,14 @@ rfm = create_rfm(df)
 scaler = load_scaler()
 kmeans_model = load_kmeans_model()
 
+# 🔑 dynamic cluster → segment mapping
+segment_map = get_cluster_labels(kmeans_model, scaler)
+
 similarity_df = build_similarity_matrix(df)
 
 
 # =================================================
-# Sidebar Navigation (BUTTONS – NO RADIO)
+# Sidebar Navigation (BUTTONS)
 # =================================================
 
 st.sidebar.title("📌 Menu")
@@ -80,10 +112,6 @@ if module == "Product Recommendation":
         unsafe_allow_html=True
     )
 
-    # -------------------------------------------------
-    # Product Selection
-    # -------------------------------------------------
-
     all_products = sorted(similarity_df.index.unique().tolist())
 
     default_product = (
@@ -97,10 +125,6 @@ if module == "Product Recommendation":
         options=all_products,
         index=all_products.index(default_product)
     )
-
-    # -------------------------------------------------
-    # Selected Product Display
-    # -------------------------------------------------
 
     st.markdown("### 🧾 Selected Product")
 
@@ -119,10 +143,6 @@ if module == "Product Recommendation":
         """,
         unsafe_allow_html=True
     )
-
-    # -------------------------------------------------
-    # Recommendations
-    # -------------------------------------------------
 
     if st.button("Recommend Similar Products"):
 
@@ -154,7 +174,7 @@ if module == "Product Recommendation":
 
 
 # =================================================
-# CUSTOMER SEGMENTATION MODULE
+# CUSTOMER SEGMENTATION MODULE (KMEANS – FIXED)
 # =================================================
 
 if module == "Customer Segmentation":
@@ -171,36 +191,13 @@ if module == "Customer Segmentation":
         ">
         <h4>📊 RFM Based Customer Segmentation</h4>
         <p>
-        Choose a predefined customer profile or manually adjust RFM values
-        to predict the customer segment.
+        KMeans clusters are unlabeled.  
+        Segment names are derived from cluster centroids using RFM rules.
         </p>
         </div>
         """,
         unsafe_allow_html=True
     )
-
-    # -------------------------------------------------
-    # Preset Customer Profiles
-    # -------------------------------------------------
-
-    preset = st.selectbox(
-        "Choose a Customer Profile",
-        [
-            "Occasional Shopper",
-            "High Value Customer",
-            "Regular Customer",
-            "High Risk Customer"
-        ]
-    )
-
-    preset_values = {
-        "High Value Customer": (10, 20, 90000),
-        "Regular Customer": (60, 8, 40000),
-        "Occasional Shopper": (325, 1, 76532),
-        "High Risk Customer": (450, 1, 5000)
-    }
-
-    default_recency, default_frequency, default_monetary = preset_values[preset]
 
     col1, col2, col3 = st.columns(3)
 
@@ -208,21 +205,21 @@ if module == "Customer Segmentation":
         recency = st.number_input(
             "Recency (days since last purchase)",
             min_value=0,
-            value=default_recency
+            value=130
         )
 
     with col2:
         frequency = st.number_input(
             "Frequency (number of purchases)",
             min_value=1,
-            value=default_frequency
+            value=4
         )
 
     with col3:
         monetary = st.number_input(
             "Monetary (total spend)",
             min_value=0.0,
-            value=float(default_monetary)
+            value=9700.0
         )
 
     if st.button("Predict Segment"):
@@ -235,12 +232,7 @@ if module == "Customer Segmentation":
         scaled_input = scaler.transform(input_df)
         cluster = int(kmeans_model.predict(scaled_input)[0])
 
-        segment_map = {
-            0: "High Value Customer",
-            1: "Regular Customer",
-            2: "Occasional Shopper",
-            3: "High Risk Customer"
-        }
+        segment = segment_map.get(cluster, "Unknown")
 
         segment_explanation = {
             "High Value Customer": (
@@ -252,8 +244,8 @@ if module == "Customer Segmentation":
                 "They respond well to offers and engagement."
             ),
             "Occasional Shopper": (
-                "Purchases rarely and irregularly. "
-                "They usually buy only when there is a need."
+                "Purchases occasionally with moderate recency and low frequency. "
+                "They are not loyal but not at risk of churn."
             ),
             "High Risk Customer": (
                 "Has not purchased recently and shows low engagement. "
@@ -261,8 +253,6 @@ if module == "Customer Segmentation":
             )
         }
 
-        segment = segment_map.get(cluster, "Unknown")
-
-        st.markdown(f"### 🔢 Predicted Value: **{cluster}**")
+        st.markdown(f"### 🔢 Predicted Cluster ID: **{cluster}**")
         st.success(f"👤 This customer belongs to: **{segment}**")
-        st.info(segment_explanation.get(segment))
+        st.info(segment_explanation.get(segment, ""))
