@@ -8,9 +8,9 @@ from src.rfm import create_rfm
 from src.recommendation import build_similarity_matrix, recommend_products
 from src.clustering import load_kmeans_model, load_scaler
 
-# -----------------------
+
 # Page Configuration
-# -----------------------
+
 st.set_page_config(
     page_title="Shopper Spectrum",
     layout="wide"
@@ -19,9 +19,9 @@ st.set_page_config(
 st.title("🛒 Shopper Spectrum")
 st.caption("Customer Segmentation & Product Recommendation System")
 
-# -----------------------
+
 # Load Data & Models
-# -----------------------
+
 df = load_data("data/raw/online_retail.csv")
 df = preprocess_data(df)
 
@@ -32,18 +32,18 @@ kmeans_model = load_kmeans_model()
 
 similarity_df = build_similarity_matrix(df)
 
-# -----------------------
+
 # Sidebar Navigation
-# -----------------------
+
 st.sidebar.title("📌 Navigation")
 module = st.sidebar.radio(
     "Select Module",
     ["Product Recommendation", "Customer Segmentation"]
 )
 
-# ==================================================
-# 🎯 PRODUCT RECOMMENDATION MODULE
-# ==================================================
+
+# PRODUCT RECOMMENDATION MODULE
+
 if module == "Product Recommendation":
 
     st.subheader("🎯 Product Recommendation")
@@ -78,9 +78,9 @@ if module == "Product Recommendation":
                     unsafe_allow_html=True
                 )
 
-# ==================================================
-# 🎯 CUSTOMER SEGMENTATION MODULE
-# ==================================================
+
+# CUSTOMER SEGMENTATION MODULE
+
 if module == "Customer Segmentation":
 
     st.subheader("🎯 Customer Segmentation")
