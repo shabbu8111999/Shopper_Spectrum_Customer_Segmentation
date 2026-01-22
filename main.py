@@ -13,10 +13,6 @@ from src.clustering import load_kmeans_model, load_scaler
 # =================================================
 
 def get_cluster_labels(kmeans_model, scaler):
-    """
-    Derive human-readable segment labels from KMeans centroids
-    using RFM business rules.
-    """
     centers = scaler.inverse_transform(kmeans_model.cluster_centers_)
     centers_df = pd.DataFrame(
         centers, columns=["Recency", "Frequency", "Monetary"]
@@ -62,28 +58,71 @@ rfm = create_rfm(df)
 scaler = load_scaler()
 kmeans_model = load_kmeans_model()
 
-# 🔑 dynamic cluster → segment mapping
 segment_map = get_cluster_labels(kmeans_model, scaler)
-
 similarity_df = build_similarity_matrix(df)
 
 
 # =================================================
-# Sidebar Navigation (BUTTONS)
+# Custom Sidebar (MATCHES IMAGE STYLE)
 # =================================================
 
-st.sidebar.title("📌 Menu")
-
 if "page" not in st.session_state:
-    st.session_state.page = "Product Recommendation"
-
-if st.sidebar.button("🎯 Product Recommendation"):
-    st.session_state.page = "Product Recommendation"
-
-if st.sidebar.button("📊 Customer Segmentation"):
     st.session_state.page = "Customer Segmentation"
 
+st.sidebar.markdown(
+    """
+    <style>
+    .menu-box {
+        background-color: #f8f9fa;
+        padding: 12px;
+        border-radius: 10px;
+    }
+    .menu-item {
+        padding: 10px;
+        border-radius: 8px;
+        margin-bottom: 6px;
+        font-weight: 500;
+        cursor: pointer;
+        color: #333;
+    }
+    .menu-item:hover {
+        background-color: #e9ecef;
+    }
+    .menu-item.active {
+        background-color: #ff4b4b;
+        color: white;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+st.sidebar.markdown("<div class='menu-box'>", unsafe_allow_html=True)
+
+if st.sidebar.button("🏠 Home"):
+    st.session_state.page = "Home"
+
+if st.sidebar.button("📊 Clustering"):
+    st.session_state.page = "Customer Segmentation"
+
+if st.sidebar.button("🎯 Recommendation"):
+    st.session_state.page = "Product Recommendation"
+
+st.sidebar.markdown("</div>", unsafe_allow_html=True)
+
 module = st.session_state.page
+
+
+# =================================================
+# HOME PAGE
+# =================================================
+
+if module == "Home":
+    st.subheader("🏠 Home")
+    st.info(
+        "This system demonstrates Customer Segmentation using RFM + KMeans "
+        "and Product Recommendation using Item-Based Collaborative Filtering."
+    )
 
 
 # =================================================
@@ -114,19 +153,10 @@ if module == "Product Recommendation":
 
     all_products = sorted(similarity_df.index.unique().tolist())
 
-    default_product = (
-        "GREEN VINTAGE SPOT BEAKER"
-        if "GREEN VINTAGE SPOT BEAKER" in all_products
-        else all_products[0]
-    )
-
     product_name = st.selectbox(
         "Select a Product",
-        options=all_products,
-        index=all_products.index(default_product)
+        options=all_products
     )
-
-    st.markdown("### 🧾 Selected Product")
 
     st.markdown(
         f"""
@@ -135,7 +165,6 @@ if module == "Product Recommendation":
             border-radius:10px;
             background-color:#2563eb;
             color:white;
-            font-size:16px;
             font-weight:600;
         ">
         🛒 {product_name}
@@ -145,14 +174,9 @@ if module == "Product Recommendation":
     )
 
     if st.button("Recommend Similar Products"):
-
         result = recommend_products(similarity_df, product_name)
 
-        if isinstance(result, str):
-            st.error(result)
-        else:
-            st.markdown("### 🎁 Recommended Products")
-
+        if not isinstance(result, str):
             for product in result.index:
                 st.markdown(
                     f"""
@@ -162,9 +186,6 @@ if module == "Product Recommendation":
                         border-radius:10px;
                         background-color:#111827;
                         color:white;
-                        box-shadow:0px 0px 8px rgba(0,0,0,0.6);
-                        font-size:15px;
-                        font-weight:500;
                     ">
                     🛍️ {product}
                     </div>
@@ -174,53 +195,23 @@ if module == "Product Recommendation":
 
 
 # =================================================
-# CUSTOMER SEGMENTATION MODULE (KMEANS – FIXED)
+# CUSTOMER SEGMENTATION MODULE
 # =================================================
 
 if module == "Customer Segmentation":
 
     st.subheader("🎯 Customer Segmentation")
 
-    st.markdown(
-        """
-        <div style="
-            padding:20px;
-            border-radius:10px;
-            background-color:#1f2937;
-            color:white;
-        ">
-        <h4>📊 RFM Based Customer Segmentation</h4>
-        <p>
-        KMeans clusters are unlabeled.  
-        Segment names are derived from cluster centroids using RFM rules.
-        </p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        recency = st.number_input(
-            "Recency (days since last purchase)",
-            min_value=0,
-            value=130
-        )
+        recency = st.number_input("Recency", value=325)
 
     with col2:
-        frequency = st.number_input(
-            "Frequency (number of purchases)",
-            min_value=1,
-            value=4
-        )
+        frequency = st.number_input("Frequency", min_value=1, value=1)
 
     with col3:
-        monetary = st.number_input(
-            "Monetary (total spend)",
-            min_value=0.0,
-            value=9700.0
-        )
+        monetary = st.number_input("Monetary", value=76532.0)
 
     if st.button("Predict Segment"):
 
@@ -229,30 +220,11 @@ if module == "Customer Segmentation":
             columns=["Recency", "Frequency", "Monetary"]
         )
 
-        scaled_input = scaler.transform(input_df)
-        cluster = int(kmeans_model.predict(scaled_input)[0])
+        cluster = int(
+            kmeans_model.predict(scaler.transform(input_df))[0]
+        )
 
-        segment = segment_map.get(cluster, "Unknown")
+        segment = segment_map.get(cluster)
 
-        segment_explanation = {
-            "High Value Customer": (
-                "Purchases frequently, spends more, and has bought recently. "
-                "These customers are loyal and valuable."
-            ),
-            "Regular Customer": (
-                "Purchases consistently with moderate spending. "
-                "They respond well to offers and engagement."
-            ),
-            "Occasional Shopper": (
-                "Purchases occasionally with moderate recency and low frequency. "
-                "They are not loyal but not at risk of churn."
-            ),
-            "High Risk Customer": (
-                "Has not purchased recently and shows low engagement. "
-                "These customers are at risk of churn."
-            )
-        }
-
-        st.markdown(f"### 🔢 Predicted Cluster ID: **{cluster}**")
+        st.markdown(f"### 🔢 Cluster: **{cluster}**")
         st.success(f"👤 This customer belongs to: **{segment}**")
-        st.info(segment_explanation.get(segment, ""))
