@@ -1,9 +1,26 @@
 def label_cluster(row):
-    if row["Recency"] < 50 and row["Frequency"] > 10 and row["Monetary"] > 500:
-        return "High-Value"
-    elif row["Frequency"] > 5:
-        return "Regular"
-    elif row["Recency"] > 200:
-        return "At-Risk"
+    # High Value Customers
+    if (
+        row["Recency"] <= 60
+        and row["Frequency"] >= 8
+        and row["Monetary"] >= 50000
+    ):
+        return "High Value Customer"
+
+    # High Risk Customers
+    elif (
+        row["Recency"] >= 180
+        and row["Frequency"] <= 2
+    ):
+        return "High Risk Customer"
+
+    # Regular Customers
+    elif (
+        row["Frequency"] >= 5
+        and row["Recency"] <= 150
+    ):
+        return "Regular Customer"
+
+    # Occasional Customers
     else:
-        return "Occasional"
+        return "Occasional Shopper"
