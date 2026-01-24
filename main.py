@@ -8,9 +8,7 @@ from src.recommendation import build_similarity_matrix, recommend_products
 from src.clustering import load_kmeans_model, load_scaler
 
 
-# =================================================
 # Page Configuration
-# =================================================
 
 st.set_page_config(
     page_title="Shopper Spectrum",
@@ -21,9 +19,7 @@ st.title("🛒 Shopper Spectrum")
 st.caption("Customer Segmentation & Product Recommendation System")
 
 
-# =================================================
 # Load Data & Models
-# =================================================
 
 df = load_data("data/raw/online_retail.csv")
 df = preprocess_data(df)
@@ -36,9 +32,7 @@ kmeans_model = load_kmeans_model()
 similarity_df = build_similarity_matrix(df)
 
 
-# =================================================
 # Sidebar Navigation (BUTTONS – NO RADIO)
-# =================================================
 
 st.sidebar.title("📌 Menu")
 
@@ -54,9 +48,7 @@ if st.sidebar.button("📊 Customer Segmentation"):
 module = st.session_state.page
 
 
-# =================================================
 # PRODUCT RECOMMENDATION MODULE
-# =================================================
 
 if module == "Product Recommendation":
 
@@ -80,9 +72,8 @@ if module == "Product Recommendation":
         unsafe_allow_html=True
     )
 
-    # -------------------------------------------------
+
     # Product Selection
-    # -------------------------------------------------
 
     all_products = sorted(similarity_df.index.unique().tolist())
 
@@ -98,9 +89,8 @@ if module == "Product Recommendation":
         index=all_products.index(default_product)
     )
 
-    # -------------------------------------------------
+
     # Selected Product Display
-    # -------------------------------------------------
 
     st.markdown("### 🧾 Selected Product")
 
@@ -120,9 +110,8 @@ if module == "Product Recommendation":
         unsafe_allow_html=True
     )
 
-    # -------------------------------------------------
+
     # Recommendations
-    # -------------------------------------------------
 
     if st.button("Recommend Similar Products"):
 
@@ -153,9 +142,8 @@ if module == "Product Recommendation":
                 )
 
 
-# =================================================
+
 # CUSTOMER SEGMENTATION MODULE
-# =================================================
 
 if module == "Customer Segmentation":
 
@@ -179,9 +167,8 @@ if module == "Customer Segmentation":
         unsafe_allow_html=True
     )
 
-    # -------------------------------------------------
+
     # Preset Customer Profiles
-    # -------------------------------------------------
 
     preset = st.selectbox(
         "Choose a Customer Profile",
