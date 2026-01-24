@@ -122,8 +122,8 @@ Top-N Product Recommendations
 <pre>
 Shopper_Spectrum_Customer_Segmentation
 │
-├── app.py # Streamlit application
-├── README.md # Project documentation
+├── main.py # Streamlit application
+├── README.md
 ├── requirements.txt
 │
 ├── data/
@@ -198,9 +198,9 @@ uv run streamlit run main.py
 
 ## 👨‍💻 Author
 
-Project Name: Shopper Spectrum Customer Segmentation and Product Recommendation
-Domain: E-Commerce Analytics
-Focus Areas: Machine Learning, Data Science, Recommender Systems, Streamlit
+- Project Name: Shopper Spectrum Customer Segmentation and Product Recommendation
+- Domain: E-Commerce Analytics
+- Focus Areas: Machine Learning, Data Science, Recommender Systems, Streamlit
 
 ---
 
